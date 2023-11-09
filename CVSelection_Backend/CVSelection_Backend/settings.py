@@ -37,7 +37,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'authentication',
 ]
+
+AUTH_USER_MODEL = 'authentication.User'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -75,8 +79,12 @@ WSGI_APPLICATION = 'CVSelection_Backend.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'cvselectiondb',
+        'USER': 'postgres',
+        'PASSWORD': 'kayitare',
+        'HOST': '127.0.0.1',
+        'PORT': '5432',
     }
 }
 
@@ -100,6 +108,14 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
+REST_FRAMEWORK = {
+    'NON_FIELD_ERRORS_KEY': 'error',
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'authentication.jwt.JWTAuthentication',
+
+    ]
+}
+
 # Internationalization
 # https://docs.djangoproject.com/en/3.0/topics/i18n/
 
@@ -113,6 +129,20 @@ USE_L10N = True
 
 USE_TZ = True
 
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_USE_TLS = True
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_HOST_USER = 'kayitarelie20657@gmail.com'
+EMAIL_HOST_PASSWORD = 'cvwp qpcq jicy ixot'
+EMAIL_PORT = 587
+
+# cors
+
+CORS_ALLOWED_ORIGINS = [
+
+    "http://localhost:3000",
+    "http://localhost:8000",
+]
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
