@@ -1,6 +1,4 @@
-
 from email.policy import default
-from django.db import models
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.conf import settings
@@ -13,8 +11,14 @@ from django.apps import apps
 import jwt
 from django.utils import timezone
 from datetime import datetime, timedelta
+
 # Create your models here.
 
+#===============================================================
+class Country(models.Model):
+    country_name = models.CharField(max_length=100)
+    isMemberOfAFDB = models.BooleanField(max_length=100)
+#===========================================================================
 
 class MyUserManager(UserManager):
     def _create_user(self, username, email, password, **extra_fields):
@@ -53,7 +57,6 @@ class MyUserManager(UserManager):
 
         return self._create_user(username, email, password, **extra_fields)
 
-
 class User(AbstractBaseUser, PermissionsMixin, TrackingModel):
 
     username_validator = UnicodeUsernameValidator()
@@ -74,11 +77,10 @@ class User(AbstractBaseUser, PermissionsMixin, TrackingModel):
     email = models.EmailField(_('email address'), blank=False, unique=True)
     USER_ROLE_CHOICES = (
         ('applicant', 'applicant'),
-        ('recruiter', 'recruiter'),
-        ('admin', 'admin')
+        ('recruiter', 'recruiter')
+        # ('admin', 'admin')
     )
-    user_role = models.CharField(
-        max_length=25, choices=USER_ROLE_CHOICES, default='applicant')
+    user_role = models.CharField(max_length=25, choices=USER_ROLE_CHOICES, default='applicant')
     phone_number = models.CharField(max_length=255, default='078xxxxxxx')
     is_staff = models.BooleanField(
         _('staff status'),
@@ -112,9 +114,15 @@ class User(AbstractBaseUser, PermissionsMixin, TrackingModel):
 
     @property
     def token(self):
-        token = jwt.encode({'username': self.username, 'email': self.email, 'exp': datetime.utcnow(
-        ) + timedelta(hours=24)}, settings.SECRET_KEY, algorithm='HS256')
-
+        token = jwt.encode(
+            {
+                'username': self.username,
+                'email': self.email,
+                'exp': datetime.utcnow() + timedelta(hours=24)
+            },
+            settings.SECRET_KEY,
+            algorithm='HS256'
+        )
         return token
     
 
@@ -123,32 +131,46 @@ class User(AbstractBaseUser, PermissionsMixin, TrackingModel):
         db_table = 'users'
         
 
-
 class Applicant(models.Model):
     applicant = models.OneToOneField(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, blank=True, null=True)
+        settings.AUTH_USER_MODEL,primary_key=True, on_delete=models.CASCADE)
     
+    GENDER_CHOICES = [
+        ('male', 'Male'),
+        ('female', 'Female'),
+        ('other', 'Other'),
+    ]
+    MARITAL_STATUS_CHOICES = [
+        ('Single', 'Single'),
+        ('Married', 'Married'),
+        ('Divorced', 'Divorced'),
+        ('Widowed', 'Widowed'),
+    ]
+    maritalStatus = models.CharField(max_length=100, blank=True, null=True, choices=MARITAL_STATUS_CHOICES)
+    address = models.CharField(max_length=100, blank=True, null=True)
+    city = models.CharField(max_length=100, blank=True, null=True)
+    currentTitle = models.CharField(max_length=100, blank=True, null=True)
+    gender = models.CharField(max_length=100, blank=True, null=True, choices=GENDER_CHOICES)
+    country = models.ForeignKey(Country, on_delete=models.CASCADE,blank=True, null=True)
+    photo = models.ImageField(upload_to='applicant_photo/', blank=True, null=True)  
+    dateOfBirth = models.DateField(blank=True, null=True)
+
     class Meta:
         ordering = ('applicant',)
         db_table = 'applicant'
 
     def __str__(self):
-        return self.project_owner.first_name + self.project_owner.last_name
-
-    # too string to return project owner names with spaces
-
-    def __str__(self):
-        return self.project_owner.first_name + self.project_owner.last_name
-
+        return f"{self.applicant.first_name} {self.applicant.last_name}"
 
 class Recruiter(models.Model):
     recruiter = models.OneToOneField(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, blank=True, null=True)
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+     
     
     class Meta:
         ordering = ('recruiter',)
         db_table = 'recruiter'
 
     def __str__(self):
+        # return self.user.first_name + self.user.last_name
         return self.reviewer.first_name + self.reviewer.last_name
-
