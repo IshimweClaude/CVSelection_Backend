@@ -3,22 +3,27 @@ from django.shortcuts import render
 # Create your views here.
 from django.shortcuts import render
 from requests import Response
-from rest_framework.generics import GenericAPIView
+from rest_framework.generics import GenericAPIView, ListCreateAPIView, RetrieveUpdateDestroyAPIView
 
-from .models import User
-from .serializers import RegisterSerializer, LoginSerializer, EmailVerificationSerializer
+from .models import User, Country
+from .serializers import RegisterSerializer, LoginSerializer, EmailVerificationSerializer, CountrySerializer
 from rest_framework import response, status, permissions
 from django.contrib.auth import authenticate
 from django.contrib.sites.shortcuts import get_current_site
 from django.urls import reverse
 from .utils import Util
+from rest_framework.permissions import AllowAny, IsAuthenticated
 import jwt
 from django.conf import settings
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from rest_framework import views
-# Create your views here.
+from rest_framework import generics, status
+from django.http import Http404
+from authentication.models import *
+from django.core.exceptions import ObjectDoesNotExist
 
+# Create your views here.
 
 class AuthUserApiView(GenericAPIView):
 
@@ -28,7 +33,6 @@ class AuthUserApiView(GenericAPIView):
         user = request.user
         serializer = RegisterSerializer(user)
         return response.Response({"user": serializer.data})
-
 
 class RegisterApiView(GenericAPIView):
     authentication_classes = []
@@ -54,7 +58,6 @@ class RegisterApiView(GenericAPIView):
             Util.send_email(data)
             return response.Response(serializer.data, status=status.HTTP_201_CREATED)
         return response.Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 class VerifyEmail(views.APIView):
 
@@ -100,3 +103,31 @@ class LoginApiView(GenericAPIView):
                 return response.Response(serializer.data, status=status.HTTP_200_OK)
             return response.Response({'error': 'Invalid Credentials'}, status=status.HTTP_401_UNAUTHORIZED)
         return response.Response({'error': 'Email is not verified'}, status=status.HTTP_401_UNAUTHORIZED)
+    
+class CountryApiView(ListCreateAPIView):
+    serializer_class = CountrySerializer
+    permission_classes = (IsAuthenticated,)
+
+    def perform_create(self, serializer):
+        try:
+            recruiter = Recruiter.objects.get(recruiter=self.request.user.id)
+        except Recruiter.DoesNotExist:
+            return response.Response({"error": "User role should be a recruiter"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if serializer.is_valid():
+            serializer.save()
+            return response.Response({"country": "Country recorded successfully"}, status=status.HTTP_201_CREATED)
+        return response.Response({"error": "Wrong inputs"}, status=status.HTTP_400_BAD_REQUEST)
+
+    def get_queryset(self):
+        return Country.objects.all()
+
+class CountryDetailApiView(RetrieveUpdateDestroyAPIView):
+    serializer_class = CountrySerializer
+    permission_classes = (IsAuthenticated,)
+    lookup_field = 'id'
+
+    def get_queryset(self):
+        return Country.objects.filter(applicant=self.request.user)
+
+
