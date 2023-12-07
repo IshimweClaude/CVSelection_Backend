@@ -12,8 +12,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'email',
-                  'username', 'phone_number', 'user_role', 'password', 'confirm_password']
+        fields = ['first_name', 'last_name', 'email', 'username', 'phone_number', 'user_role', 'password', 'confirm_password']
 
     def validate(self, data):
         password = data.get('password')
@@ -21,6 +20,8 @@ class RegisterSerializer(serializers.ModelSerializer):
 
         if password != confirm_password:
             raise serializers.ValidationError("Passwords do not match.")
+        
+        data['user_role'] = data.get('user_role', 'applicant') # Set default user_role to applicant
 
         return data
 
@@ -37,6 +38,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         except Exception as e:
             # Handle the exception (e.g., log the error)
             # You might want to delete the user or take appropriate action
+            print(str(e))
             created_user.delete()
             raise serializers.ValidationError("Failed to create associated profile.")
 
@@ -60,9 +62,6 @@ class EmailVerificationSerializer(serializers.ModelSerializer):
         model = User
         fields = ['token']
 
-class CountrySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Country
-        fields = "__all__"
+
 
 
