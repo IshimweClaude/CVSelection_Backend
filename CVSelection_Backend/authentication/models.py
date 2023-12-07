@@ -14,11 +14,13 @@ from datetime import datetime, timedelta
 
 # Create your models here.
 
-#===============================================================
 class Country(models.Model):
     country_name = models.CharField(max_length=100)
     isMemberOfAFDB = models.BooleanField(max_length=100)
-#===========================================================================
+
+    class Meta:
+        ordering = ('country_name',)
+        db_table = 'country'
 
 class MyUserManager(UserManager):
     def _create_user(self, username, email, password, **extra_fields):
@@ -133,7 +135,7 @@ class User(AbstractBaseUser, PermissionsMixin, TrackingModel):
 
 class Applicant(models.Model):
     applicant = models.OneToOneField(
-        settings.AUTH_USER_MODEL,primary_key=True, on_delete=models.CASCADE)
+        User,primary_key=True, on_delete=models.CASCADE)
     
     GENDER_CHOICES = [
         ('male', 'Male'),
@@ -164,7 +166,7 @@ class Applicant(models.Model):
 
 class Recruiter(models.Model):
     recruiter = models.OneToOneField(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+        User, on_delete=models.CASCADE)
      
     
     class Meta:

@@ -20,7 +20,7 @@ from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from django.conf import settings
 from django.conf.urls.static import static
-from .router import router
+
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -38,8 +38,8 @@ schema_view = get_schema_view(
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', include(router.urls)),
-    path('', include('authentication.urls')),
+    path('api/', include('JobApplication.urls')),
+    path('api/auth/', include('authentication.urls')),
 
     path('swagger.json', schema_view.without_ui(
         cache_timeout=None), name='schema-json'),

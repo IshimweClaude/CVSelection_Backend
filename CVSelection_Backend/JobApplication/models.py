@@ -10,44 +10,80 @@ class Job(models.Model):
     STATUS_CHOICES = [
         ('open', 'Open'),
         ('closed', 'Closed'),
-
     ]
-    job_id = models.CharField(max_length=100)
+    JOB_TYPE_CHOICES = [
+        ('full_time', 'Full Time'),
+        ('part_time', 'Part Time'),
+        ('contract', 'Contract'),
+        ('temporary', 'Temporary'),
+        ('internship', 'Internship'),
+    ]
     title = models.CharField(max_length=100)
     description = models.TextField() # job description
-    requirements = models.TextField(max_length=100)
-    postedDate = models.DateField(auto_now=True)
+    requirements = models.TextField()
+    postedDate = models.DateField(auto_now_add=True)
     deadline = models.DateField()
     location = models.CharField(max_length=100)
     salary = models.CharField(max_length=100, blank=True, null=True)
     status = models.CharField(max_length=100, choices=STATUS_CHOICES, default='open')
-
+    job_type = models.CharField(max_length=100, choices=JOB_TYPE_CHOICES, default='full_time')
     job_file = models.FileField(upload_to='job_file/', blank=True, null=True)
+
+    class Meta:
+        ordering = ['-postedDate']
+        db_table = 'job'
     
 class Formal_education(models.Model):
-    formal_education_id = models.CharField(max_length=100)
+    DEGREE_CHOICES = [
+        ('Bachelor', 'Bachelor'),
+        ('Master', 'Master'),
+        ('PhD', 'PhD'),
+        ('Associate', 'Associate'),
+        ('Diploma', 'Diploma'),
+        ('Certificate', 'Certificate'),
+        ('Other', 'Other'),
+    ]
     institution = models.CharField(max_length=100)
-    degree = models.CharField(max_length=100) # Bachelor, Master, PhD, etc.
+    degree = models.CharField(max_length=100, choices=DEGREE_CHOICES) # Bachelor, Master, PhD, etc.
     start_date = models.DateField()
-    end_date = models.DateField() 
+    end_date = models.DateField(blank=True, null=True) 
     country = models.ForeignKey(Country, on_delete=models.CASCADE, blank=True, null=True)
-    description = models.TextField(max_length=100, blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
     applicant = models.ForeignKey(Applicant, on_delete=models.CASCADE)
     subject = models.CharField(max_length=100) # To be choosen. eg: Computer Science, Business Administration, etc.
-    grade = models.CharField(max_length=100) # GPA
+    grade = models.CharField(max_length=100, blank=True, null=True) # GPA
+
+    class Meta:
+        ordering = ['-start_date']
+        db_table = 'formal_education'
+
+
     
 class Work_experience(models.Model):
-    
-    work_experience_id = models.CharField(max_length=100)
+    JOB_TITLE_CHOICES = [
+        ('Software Engineer', 'Software Engineer'),
+        ('Business Analyst', 'Business Analyst'),
+        # Add more job titles as needed
+    ]
+    INDUSTRY_CHOICES = [
+        ('Agriculture', 'Agriculture'),
+        ('Banking', 'Banking'),
+        ('Health', 'Health'),
+        # Add more industries as needed
+    ]
     company_name = models.CharField(max_length=100)
     start_date = models.DateField()
     is_present_employee = models.BooleanField(default=False) # if . true, no end_date (To be done on frontEnd)
     end_date = models.DateField(default=None, blank=True, null=True)
     working_country = models.ForeignKey(Country, on_delete=models.CASCADE)
-    description = models.TextField(max_length=100,blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
     applicant = models.ForeignKey(Applicant, on_delete=models.CASCADE)
-    industry = models.CharField(max_length=100) # Agriculcilure, Banking, Health, etc.
-    job_title = models.CharField(max_length=100) # To be choosen. eg: Software Engineer, Business Analyst, etc.
+    industry = models.CharField(max_length=100, choices=INDUSTRY_CHOICES, blank=True, null=True) # Agriculture, Banking, Health, etc.
+    job_title = models.CharField(max_length=100, choices=JOB_TITLE_CHOICES, blank=True, null=True) # To be chosen. eg: Software Engineer, Business Analyst, etc.
+
+    class Meta:
+        ordering = ['-start_date']
+        db_table = 'work_experience'
 
 class Language_skills(models.Model):
     LANGUAGE_NAME_CHOICES = [
@@ -83,11 +119,11 @@ class Language_skills(models.Model):
     LEVEL_CHOICES = [
         ('basic', 'Basic'),
         ('intermediate', 'Intermediate'),
-        ('h', 'Advanced'),
+        ('advanced', 'Advanced'),
         ('fluent', 'Fluent'),
         ('native', 'Native'),
     ]
-    language_skills_id = models.CharField(max_length=100) 
+    
     # languagues list. eg: English, French, Arabic, etc.
     language = models.CharField(max_length=100, choices=LANGUAGE_NAME_CHOICES)
     # Proficiency levels. eg: Basic, Intermediate, Advanced, Fluent, Native
@@ -95,6 +131,10 @@ class Language_skills(models.Model):
     writing = models.CharField(max_length=100,choices=LEVEL_CHOICES)
     speaking = models.CharField(max_length=100,choices=LEVEL_CHOICES)
     applicant = models.ForeignKey(Applicant, on_delete=models.CASCADE)
+
+
+    class Meta:
+        db_table = 'language_skills'
 
 class Application(models.Model):
     STATUS_CHOICES = [
@@ -105,40 +145,23 @@ class Application(models.Model):
         ('accepted', 'Accepted'),
         ('rejected', 'Rejected'),
         ('hired', 'Hired'),
+       
     ]
-    application_id = models.CharField(max_length=100)
+    
     applicant = models.ForeignKey(Applicant, on_delete=models.CASCADE)
-    job = models.ForeignKey(Job, on_delete=models.CASCADE,default=1)
+    job = models.ForeignKey(Job, on_delete=models.CASCADE)
     status = models.CharField(max_length=100, choices=STATUS_CHOICES, default='submitted')
-    date_applied = models.DateField()
+    date_applied = models.DateField(auto_now_add=True)
     cv = models.FileField(upload_to='application_files/')
     cover_letter = models.FileField(upload_to='application_files/', blank=True, null=True)
 
-    is_shortlisted = models.BooleanField(default=False)
-    is_rejected = models.BooleanField(default=False)
-    is_hired = models.BooleanField(default=False)
-    is_submitted = models.BooleanField(default=False)
-    is_reviewed = models.BooleanField(default=False)
-    is_interviewed = models.BooleanField(default=False)
-    is_accepted = models.BooleanField(default=False)
+    def __str__(self):
+        return f'{self.applicant} applied for {self.job}'
 
-    def save(self, *args, **kwargs):
-        # Ensure only one of the is_* fields is True
-        is_fields = [
-            'is_shortlisted',
-            'is_rejected',
-            'is_hired',
-            'is_submitted',
-            'is_reviewed',
-            'is_interviewed',
-            'is_accepted',
-            'is_rejected_by_recruiter',
-        ]
+    class Meta:
+        ordering = ['-date_applied']
+        db_table = 'application'
+        # unique_together = ['applicant', 'job']
 
-        for field in is_fields:
-            if getattr(self, field):
-                for other_field in is_fields:
-                    if other_field != field:
-                        setattr(self, other_field, False)
 
-        super().save(*args, **kwargs)
+        
