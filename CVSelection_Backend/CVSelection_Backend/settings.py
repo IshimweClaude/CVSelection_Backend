@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 """
 
 import os
+import dj_database_url
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -23,9 +24,9 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = '7%t&5rz$3ie(for11o_rf@6t(1q^sc-oxo@f7b5@919$80z!*6'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 # Application definition
 
@@ -77,15 +78,17 @@ WSGI_APPLICATION = 'CVSelection_Backend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
+DATABASE_URL = "postgresql://postgres:F-dFc5CE*AFGBG3dDa-dca662FDCd*D2@roundhouse.proxy.rlwy.net:45215/railway"
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'cvselectiondb',
-        'USER': 'postgres',
-        'PASSWORD': 'root',
-        'HOST': '127.0.0.1',
-        'PORT': '5432',
-    }
+    'default': dj_database_url.config(default=DATABASE_URL, conn_max_age=1800)
+    # {
+        # 'ENGINE': 'django.db.backends.postgresql',
+        # 'NAME': 'cvselectiondb',
+        # 'USER': 'postgres',
+        # 'PASSWORD': 'root',
+        # 'HOST': '127.0.0.1',
+        # 'PORT': '5432',
+    # }
 }
 
 
