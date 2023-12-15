@@ -78,7 +78,12 @@ WSGI_APPLICATION = 'CVSelection_Backend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
-DATABASE_URL = "postgresql://postgres:F-dFc5CE*AFGBG3dDa-dca662FDCd*D2@roundhouse.proxy.rlwy.net:45215/railway"
+# DATABASE_URL = "postgresql://postgres:F-dFc5CE*AFGBG3dDa-dca662FDCd*D2@roundhouse.proxy.rlwy.net:45215/railway"
+DATABASE_URL = "postgresql://postgres:bAfe5g*2*Ga62GGED-d-6123cec-B4Db@roundhouse.proxy.rlwy.net:52646/railway"
+
+
+
+
 DATABASES = {
     'default': dj_database_url.config(default=DATABASE_URL, conn_max_age=1800)
     # {
