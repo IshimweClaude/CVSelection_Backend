@@ -11,10 +11,9 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 """
 
 import os
-import dj_database_url
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(_file_)))
 
 
 # Quick-start development settings - unsuitable for production
@@ -24,9 +23,9 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = '7%t&5rz$3ie(for11o_rf@6t(1q^sc-oxo@f7b5@919$80z!*6'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = []
 
 # Application definition
 
@@ -47,6 +46,7 @@ AUTH_USER_MODEL = 'authentication.User'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -78,22 +78,16 @@ WSGI_APPLICATION = 'CVSelection_Backend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
-# DATABASE_URL = "postgresql://postgres:F-dFc5CE*AFGBG3dDa-dca662FDCd*D2@roundhouse.proxy.rlwy.net:45215/railway"
-DATABASE_URL = "postgresql://postgres:bAfe5g*2*Ga62GGED-d-6123cec-B4Db@roundhouse.proxy.rlwy.net:52646/railway"
-
-
-
-
 DATABASES = {
-    'default': dj_database_url.config(default=DATABASE_URL, conn_max_age=1800)
-    # {
-        # 'ENGINE': 'django.db.backends.postgresql',
-        # 'NAME': 'cvselectiondb',
-        # 'USER': 'postgres',
-        # 'PASSWORD': 'root',
-        # 'HOST': '127.0.0.1',
-        # 'PORT': '5432',
-    # }
+    'default': 
+    {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'cvselectiondb',
+        'USER': 'postgres',
+        'PASSWORD': 'root',
+        'HOST': '127.0.0.1',
+        'PORT': '5432',
+    }
 }
 
 
@@ -155,4 +149,6 @@ CORS_ALLOWED_ORIGINS = [
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
-STATIC_URL = '/static/'
+STATIC_URL='/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
