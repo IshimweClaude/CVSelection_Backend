@@ -78,7 +78,7 @@ WSGI_APPLICATION = 'CVSelection_Backend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
-DATABASE_URL = "postgresql://postgres:F-dFc5CE*AFGBG3dDa-dca662FDCd*D2@roundhouse.proxy.rlwy.net:45215/railway"
+DATABASE_URL = "postgresql://postgres:e2BFge4GcdDDAC1dgbFDfBfC2G*D5afb@viaduct.proxy.rlwy.net:18763/railway"
 
 DATABASES = {
     'default': dj_database_url.config(default=DATABASE_URL, conn_max_age=1800)
@@ -91,7 +91,6 @@ DATABASES = {
         # 'PORT': '5432',
     # }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators
@@ -110,7 +109,6 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
-
 
 REST_FRAMEWORK = {
     'NON_FIELD_ERRORS_KEY': 'error',
@@ -152,3 +150,9 @@ CORS_ALLOWED_ORIGINS = [
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
 STATIC_URL = '/static/'
+
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+# Extra directories for static files (if needed)
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
