@@ -8,11 +8,12 @@ from django.db import IntegrityError
 # Record AFDB countries
 from rest_framework import status
 import json
+from django_filters.rest_framework import DjangoFilterBackend
 
 
 class CountryCreateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
-
+    
     def post(self, request):
         if request.user.user_role != 'recruiter':
             return Response({"detail": "Sorry, only recruiters can add new countries."}, status=status.HTTP_403_FORBIDDEN)
@@ -26,6 +27,8 @@ class CountryCreateView(APIView):
 # List all countries
 class CountryListView(APIView):
     permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['country_name','isMemberOfAFDB','id']
 
     def get(self, request):
         countries = Country.objects.all()
@@ -55,6 +58,9 @@ class JobCreateView(APIView):
 
 class JobListView(APIView):
     permission_classes = [permissions.AllowAny]
+    filter_backends = [DjangoFilterBackend]
+    
+    filterset_fields = ['title','location','status','job_type','id','salary','postedDate','deadline']
     authentication_classes = []
     def get(self, request):
         jobs = Job.objects.filter(status='open')

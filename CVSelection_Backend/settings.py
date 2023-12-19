@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'authentication',
     'JobApplication',
+    'django_filters',
 ]
 
 AUTH_USER_MODEL = 'authentication.User'
