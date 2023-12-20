@@ -24,7 +24,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = '7%t&5rz$3ie(for11o_rf@6t(1q^sc-oxo@f7b5@919$80z!*6'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ["*"]
 
@@ -41,11 +41,13 @@ INSTALLED_APPS = [
     'rest_framework',
     'authentication',
     'JobApplication',
+    'corsheaders',
 ]
 
 AUTH_USER_MODEL = 'authentication.User'
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
