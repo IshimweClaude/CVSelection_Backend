@@ -142,11 +142,12 @@ EMAIL_PORT = 587
 
 # cors
 
-CORS_ALLOWED_ORIGINS = [
+CORS_ALLOWED_ORIGINS = True
+# [
 
-    "http://localhost:3000",
-    "http://localhost:8000",
-]
+#     "http://localhost:3000",
+#     "http://localhost:8000",
+# ]
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
