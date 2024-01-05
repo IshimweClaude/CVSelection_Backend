@@ -42,13 +42,16 @@ INSTALLED_APPS = [
     'authentication',
     'JobApplication',
     'django_filters',
+    'corsheaders',
 ]
 
 AUTH_USER_MODEL = 'authentication.User'
 
 MIDDLEWARE = [
+    
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -114,7 +117,7 @@ AUTH_PASSWORD_VALIDATORS = [
 REST_FRAMEWORK = {
     'NON_FIELD_ERRORS_KEY': 'error',
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'authentication.jwt.JWTAuthentication',
+        'authentication.jwtConf.JWTAuthentication',
 
     ]
 }
