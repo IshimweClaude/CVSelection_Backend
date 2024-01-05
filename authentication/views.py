@@ -96,13 +96,15 @@ class LoginApiView(GenericAPIView):
         password = request.data.get('password', None)
 
         user = authenticate(username=email, password=password)
-
-        if user.email_verified:
-            if user:
-                serializer = self.serializer_class(user)
-                return response.Response(serializer.data, status=status.HTTP_200_OK)
+        if user is None:
             return response.Response({'error': 'Invalid Credentials'}, status=status.HTTP_401_UNAUTHORIZED)
-        return response.Response({'error': 'Email is not verified'}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        if user.email_verified:
+            serializer = self.serializer_class(user)
+            return response.Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            return response.Response({'error': 'Email is not verified'}, status=status.HTTP_401_UNAUTHORIZED)
     
+        
 
 
