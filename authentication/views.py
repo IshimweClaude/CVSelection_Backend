@@ -105,5 +105,6 @@ class LoginApiView(GenericAPIView):
         else:
             return response.Response({'error': 'Email is not verified'}, status=status.HTTP_401_UNAUTHORIZED)
     
+        
 
 
