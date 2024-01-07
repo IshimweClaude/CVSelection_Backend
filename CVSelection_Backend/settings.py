@@ -144,7 +144,12 @@ EMAIL_PORT = 587
 
 # cors
 
+<<<<<<< HEAD
 # CORS_ALLOWED_ORIGINS = [
+=======
+# CORS_ALLOWED_ORIGINS =
+# [
+>>>>>>> 00772ed448a08ec18e3f8072b14c4c654365b0ff
 
 #     "http://localhost:3000",
 #     "http://localhost:8000",
