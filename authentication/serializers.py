@@ -51,15 +51,16 @@ class RegisterSerializer(serializers.ModelSerializer):
         return created_user
 
 class LoginSerializer(serializers.ModelSerializer):
+    
     password = serializers.CharField(
         max_length=25, min_length=6, write_only=True)
 
     class Meta:
         model = User
 
-        fields = ['email', 'password', 'token',
+        fields = ['email', 'password',
                   'user_role', 'first_name', 'last_name']
-        read_only_fields = ['token', 'user_role', 'first_name', 'last_name']
+        read_only_fields = ['user_role', 'first_name', 'last_name']
 
 class EmailVerificationSerializer(serializers.ModelSerializer):
     token = serializers.CharField(max_length=555)

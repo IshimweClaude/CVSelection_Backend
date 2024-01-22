@@ -32,6 +32,7 @@ from django.urls import reverse
 from .utils import Util
 
 from rest_framework.authentication import TokenAuthentication
+from rest_framework_simplejwt.tokens import RefreshToken
 
 # Create your views here.
 
@@ -101,6 +102,7 @@ class LoginApiView(GenericAPIView):
     authentication_classes = []
 
     serializer_class = LoginSerializer
+    
 
     def post(self, request):
         email = request.data.get('email', None)
@@ -112,7 +114,13 @@ class LoginApiView(GenericAPIView):
         
         if user.email_verified:
             serializer = self.serializer_class(user)
-            return response.Response(serializer.data, status=status.HTTP_200_OK)
+            refresh = RefreshToken.for_user(user)
+            return response.Response({
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+                'user': serializer.data
+            }, status=status.HTTP_200_OK)
+           
         else:
             return response.Response({'error': 'Email is not verified'}, status=status.HTTP_401_UNAUTHORIZED)
 
