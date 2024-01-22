@@ -448,7 +448,7 @@ class JobApplicationDetailView(RetrieveUpdateDestroyAPIView):
             return Response({"detail": "Sorry, only applicant can delete job application."}, status=status.HTTP_403_FORBIDDEN)
         job_application.delete()
         return Response({"message": "Job application deleted successfully!"}, status=status.HTTP_200_OK)
-    
+ 
 
 
 # Formal Education List
