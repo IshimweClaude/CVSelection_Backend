@@ -27,7 +27,8 @@ class Job(models.Model):
     salary = models.CharField(max_length=100, blank=True, null=True)
     status = models.CharField(max_length=100, choices=STATUS_CHOICES, default='open')
     job_type = models.CharField(max_length=100, choices=JOB_TYPE_CHOICES, default='full_time')
-    job_file = models.FileField(upload_to='job_file/', blank=True, null=True)
+    english_job_description = models.FileField(upload_to='english_job_description_file/',default=None)
+    french_job_description = models.FileField(upload_to='french_job_description_file/',default=None)
 
     class Meta:
         ordering = ['-postedDate']

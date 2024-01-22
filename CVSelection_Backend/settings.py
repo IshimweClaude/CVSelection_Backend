@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 
 import os
 import dj_database_url
+import datetime
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -39,10 +40,12 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'drf_yasg',
     'rest_framework',
+    'rest_framework_simplejwt.token_blacklist',
     'authentication',
     'JobApplication',
     'django_filters',
     'corsheaders',
+    
 ]
 
 AUTH_USER_MODEL = 'authentication.User'
@@ -50,8 +53,8 @@ AUTH_USER_MODEL = 'authentication.User'
 MIDDLEWARE = [
     
     'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -94,6 +97,11 @@ DATABASES = {
         # 'HOST': '127.0.0.1',
         # 'PORT': '5432',
     # }
+}
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME':  datetime.timedelta(minutes=5),
+    'REFRESH_TOKEN_LIFETIME': datetime.timedelta(days=1),
 }
 
 # Password validation
@@ -144,17 +152,12 @@ EMAIL_PORT = 587
 
 # cors
 
-<<<<<<< HEAD
 # CORS_ALLOWED_ORIGINS = [
-=======
-# CORS_ALLOWED_ORIGINS =
-# [
->>>>>>> 00772ed448a08ec18e3f8072b14c4c654365b0ff
 
 #     "http://localhost:3000",
 #     "http://localhost:8000",
 # ]
-CORS_ALLOW_ALL_ORIGINS: True
+CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOW_METHODS = (
     "DELETE",

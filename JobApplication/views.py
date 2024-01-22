@@ -15,6 +15,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from authentication.models import Applicant
 from django.core.exceptions import ObjectDoesNotExist
+from authentication.models import User
+
 
 class CountryCreateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -106,6 +108,7 @@ class JobCreateView(APIView):
 
 class JobListView(APIView):
     permission_classes = [permissions.AllowAny]
+    
     filter_backends = [DjangoFilterBackend,filters.SearchFilter,filters.OrderingFilter]
     filterset_fields = ['id','title','location','status','job_type','id','salary','postedDate','deadline']
     search_fields = ['id','title','location','status','job_type','id','salary','postedDate','deadline']
@@ -445,7 +448,7 @@ class JobApplicationDetailView(RetrieveUpdateDestroyAPIView):
             return Response({"detail": "Sorry, only applicant can delete job application."}, status=status.HTTP_403_FORBIDDEN)
         job_application.delete()
         return Response({"message": "Job application deleted successfully!"}, status=status.HTTP_200_OK)
-    
+
 
 
 # Formal Education List
@@ -674,3 +677,479 @@ class ApplicantDetailView(RetrieveUpdateDestroyAPIView):
             return Response({"detail": "Sorry, only applicant can delete applicant profile."}, status=status.HTTP_403_FORBIDDEN)
         applicant.delete()
         return Response({"message": "Applicant profile deleted successfully!"}, status=status.HTTP_200_OK)
+    
+# ========================================================================================================
+    # AI Integration part
+# ========================================================================================================
+class ProcessResumesAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, id):
+        if request.user.user_role != 'recruiter':
+            return Response({"detail": "Sorry, only recruiters can view job applications."}, status=status.HTTP_403_FORBIDDEN)
+        
+        try:
+            job = Job.objects.get(id=id)
+        except Job.DoesNotExist:
+            return Response({"detail": "Job not found."}, status=status.HTTP_404_NOT_FOUND)
+        try:
+            applications = Application.objects.filter(job_id=id)
+        except Application.DoesNotExist:
+            return Response({"detail": "Job application not found."}, status=status.HTTP_404_NOT_FOUND)
+        
+        cv_dict = {}
+
+        for application in applications:
+            applicant_id = application.applicant_id
+            cv = application.cv
+            cv_dict[applicant_id] = str(cv.path)
+        
+                   
+        engl_job_description = job.english_job_description.path
+        fr_job_description = job.french_job_description.path
+
+        # print("English Job Description: ", engl_job_description)
+        # print("French Job Description: ", fr_job_description)
+        # print("List of Applicant's cvs", cv_dict.keys, cv_dict.values)
+        
+        # Calling model function
+        
+        results = compare_job_descriptions_and_cvs (engl_job_description, fr_job_description,cv_dict.values())
+        # results.sort(key=lambda x: x['score'], reverse=True) 
+        # print(results)
+        # results['score'] = results['score'].astype(float)
+        # results = results.sort_values(by=['score'], ascending=False)
+        for result in results:
+            for cv_path in cv_dict.values():
+                if cv_path == result['full_path']:
+                    result['applicant_id'] = list(cv_dict.keys())[list(cv_dict.values()).index(cv_path)]
+                    # result['score'] = result['score']
+                    result['applicant_Name'] = User.objects.get(id=result['applicant_id']).first_name + " " + User.objects.get(id=result['applicant_id']).last_name
+                    
+        return Response(results, status=status.HTTP_200_OK)
+        
+
+# C:\Users\Claude Ishimwe\Documents\Docs\Other Skills\Python Django\AFDB\CVSelection_Backend\CVSelection_Backend\application_files\annette_cv_fr.docx
+#===================================================================================================
+# =============== AI PART ===========================================================================
+#===================================================================================================
+
+from pdfminer.high_level import extract_text
+from pdfminer.pdfparser import PDFParser
+from pdfminer.pdfdocument import PDFDocument
+from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
+from pdfminer.pdfdevice import PDFDevice
+from pdfminer.layout import LAParams, LTText, LTTextBox
+from pdfminer.converter import PDFPageAggregator
+
+def is_white_color_pdf(color):
+    # Check if the color is white (255, 255, 255)
+    return color == (1, 1, 1)  # PDF colors are in the range [0, 1]
+
+def extract_non_white_text_from_pdf(file_path):
+    # Extract text from PDF excluding white-colored text
+    with open(file_path, 'rb') as file:
+        parser = PDFParser(file)
+        document = PDFDocument(parser)
+        rsrcmgr = PDFResourceManager()
+        laparams = LAParams()
+        device = PDFPageAggregator(rsrcmgr, laparams=laparams)
+        interpreter = PDFPageInterpreter(rsrcmgr, device)
+
+        text_content = ''
+        for page in PDFPage.create_pages(document):
+            interpreter.process_page(page)
+            layout = device.get_result()
+            for element in layout:
+                if isinstance(element, (LTText, LTTextBox)):
+                    text = element.get_text().strip()
+                    color = element.get_font().get_color()
+                    if not is_white_color_pdf(color):
+                        text_content += text + '\n'
+
+    return text_content
+
+
+
+from docx import Document
+from docx.shared import RGBColor
+
+def is_white_color_docx(color):
+    # Check if the color is white (255, 255, 255)
+    return color == RGBColor(255, 255, 255)
+
+def extract_non_white_text_from_docx(file_path):
+    # Extract text from Word document excluding white-colored text
+    doc = Document(file_path)
+    text_content = ''
+
+    for paragraph in doc.paragraphs:
+        for run in paragraph.runs:
+            text = run.text.strip()
+            color = run.font.color.rgb if run.font.color else RGBColor(0, 0, 0)  # Default to black if no color
+            if not is_white_color_docx(color):
+                text_content += text + ' '
+
+    return text_content
+
+
+
+# for convert a path function
+import docx2txt
+import textract
+import json
+from pdfminer.high_level import extract_text
+
+
+# for convert paths function
+import os
+
+# for parse_json and ranking function
+from langdetect import detect
+import spacy
+from time import gmtime, strftime
+import pandas as pd
+import numpy as np
+import transformers
+from sklearn.feature_extraction.text import TfidfVectorizer
+from spacy.lang.fr.stop_words import STOP_WORDS as fr_stop
+from spacy.lang.en.stop_words import STOP_WORDS as en_stop
+
+import tqdm
+
+
+def convert_file_to_json(file_path, fr=False):
+    try:
+        if file_path.endswith('.docx'):
+            # Handle DOCX files
+            text = docx2txt.process(file_path)
+#             text = extract_non_white_text_from_docx(file_path)
+        elif file_path.endswith('.pdf'):
+            text = extract_text(file_path)
+#             text =  extract_non_white_text_from_pdf(file_path)
+                
+        else:
+            return None  # Unsupported file format
+
+        # Create a JSON object with the "tdr" key and the extracted text
+        json_data = [{"tdr": text}]
+
+        # Serialize the JSON object to a JSON string with UTF-8 encoding
+        json_string = json.dumps(json_data, ensure_ascii=False, indent=4).encode('utf-8').decode('utf-8')
+
+        if fr:
+          with open("tdr_fr.json", "w", encoding="utf-8") as json_file:
+            json_file.write(json_string)
+        else:
+          # Write the JSON data to a file named "tdr.json"
+          with open("tdr.json", "w", encoding="utf-8") as json_file:
+              json_file.write(json_string)
+
+        return "tdr.json"
+
+    except Exception as e:
+        return str(e)
+    
+
+
+def convert_paths_to_json(path_list, fr=False):
+    result = []
+
+    for file_path in path_list:
+        try:
+            if file_path.endswith('.docx'):
+                # Handle DOCX files using docx2txt
+                text = docx2txt.process(file_path)
+            elif file_path.endswith('.pdf'):
+                # Handle PDF files using textract with the 'pdfminer' method
+                text = extract_text(file_path)
+            else:
+                text = "Unsupported file format"
+
+            # Extract the file name (id.pdf) from the path
+            file_name = os.path.basename(file_path)
+
+            # Create a dictionary with the file name as the key and the extracted text as the value
+            json_entry = {file_name: text}
+
+            result.append(json_entry)
+
+        except Exception as e:
+            return str(e)
+
+    try:
+        # Serialize the result list to a JSON string with UTF-8 encoding
+        json_string = json.dumps(result, ensure_ascii=False, indent=4).encode('utf-8').decode('utf-8')
+
+        if fr:
+          # Write the JSON data to a file named "CVs.json"
+          with open("CVs_fr.json", "w", encoding="utf-8") as json_file:
+              json_file.write(json_string)
+        else:
+          # Write the JSON data to a file named "CVs.json"
+          with open("CVs.json", "w", encoding="utf-8") as json_file:
+              json_file.write(json_string)
+
+        return "CVs.json"
+
+    except Exception as e:
+        return str(e)
+    
+    
+
+
+
+# final_stopwords_list = list(fr_stop) + list(en_stop) + ['[UNK]']
+
+from string import digits
+remove_digits = str.maketrans('', '', digits)
+
+def parse_json(json_file):
+    with open(json_file, encoding='utf-8') as json_file:
+        contents = json.load(json_file)
+
+    data = []
+    file_names = []
+    symbols = "!\"#$%&()*+-./:;<=>?@[\]^_`{|}~«»•"
+    for c in contents:
+        file_name = [k for k in c.keys()][0]
+        file_names.append(file_name)
+        sample = c[file_name]
+        sample = sample.replace('\\n', '\n')
+        sample = sample.replace('\\xef\\x83\\x98 ', '')
+        sample = sample.replace('\\xef\\x82\\xa7 ', '')
+        sample = sample.replace('\\xe2\\x80\\xa6', '')
+        sample = sample.replace('\\xef\\x82\\xb7 ', '')
+        sample = sample.replace('\\', '')
+        sample = sample.replace('\\x0co ', ' ')
+        sample = sample.replace('\xa0', ' ')
+        sample = sample.replace('\t', '')
+        sample = sample.replace(',', ' ')
+
+        sample = sample.replace("'", "")
+        for s in symbols:
+          sample = sample.replace(s, " ")
+        sentences = sample.lower().split('\n')
+        text = ' '.join(sentences).translate(remove_digits)
+        data.append(text)
+
+    return data, file_names
+
+
+def remove_stop_words(data, nlp):
+    new_text = []
+    for text in tqdm.tqdm(data):
+        words = nlp(text)
+        no_stopwords = ' '.join(t.text for t in words if not t.is_stop)
+        new_text.append(' '.join(no_stopwords.split())) 
+    return new_text
+
+
+def ranking(cvs_json_fr, cvs_json_en, tdr_json, idx=0, output=None,seuil=False,nombreseuil=4000,ner=False,stop=False):
+
+
+
+    print(strftime("%Y-%m-%d %H:%M:%S", gmtime()))
+
+
+    tdrs, tdr_names = parse_json(tdr_json)
+    LANG = detect(tdrs[0]).upper()
+    print("langue : ",LANG)
+    if LANG == 'FR':
+        cvs, cvs_names  = parse_json(cvs_json_fr)
+
+    else:
+        cvs, cvs_names  = parse_json(cvs_json_en)
+
+    tdr = [tdrs[idx]]
+
+    if LANG == 'FR':
+        nlp = spacy.load('fr_core_news_sm')
+    else:
+        nlp = spacy.load('en_core_web_sm')
+
+
+    CVS=[]
+    for cv in cvs:
+        ch="\n".join([v for v in cv.split('\n') if v])
+        ch2=" ".join([v for v in ch.split(' ') if v])
+        CVS.append(ch2)
+    cvs=CVS
+
+    if stop:
+        cvs = remove_stop_words(cvs, nlp)
+        tdrs = remove_stop_words(tdrs, nlp)
+
+
+    score_cos = pd.DataFrame(np.zeros((len(cvs), len(tdr))),
+                             columns=['tdr%d'%i for i in range(len(tdr))],
+                             index=cvs_names)
+    print(strftime("%Y-%m-%d %H:%M:%S", gmtime()))
+    for MODEL in ['BERT', 'DistilBERT', 'CamemBERT']:
+        if LANG == 'FR':
+            if MODEL == 'BERT':
+                tokenizer = transformers.BertTokenizer.from_pretrained('bert-base-multilingual-cased')
+            elif MODEL == 'DistilBERT':
+                tokenizer = transformers.DistilBertTokenizer.from_pretrained('distilbert-base-multilingual-cased')
+            elif MODEL == 'CamemBERT' and LANG == 'FR':
+                tokenizer = transformers.CamembertTokenizer.from_pretrained('camembert-base')
+        #elif LANG == 'EN':
+        else:
+            if MODEL == 'BERT':
+                tokenizer = transformers.BertTokenizer.from_pretrained('bert-base-uncased')
+            elif MODEL == 'DistilBERT':
+                tokenizer = transformers.DistilBertTokenizer.from_pretrained('distilbert-base-uncased')
+            else:
+                continue
+
+                
+        if LANG == 'FR':
+            tfidf_vectorizer = TfidfVectorizer(smooth_idf=True, use_idf=True,
+                                           stop_words=list(fr_stop),
+                                           tokenizer=tokenizer.tokenize)
+        else:
+            tfidf_vectorizer = TfidfVectorizer(smooth_idf=True, use_idf=True,
+                                           stop_words=list(en_stop),
+                                           tokenizer=tokenizer.tokenize)
+
+
+        # just send in all your docs here
+        fitted_vectorizer = tfidf_vectorizer.fit(tdrs)
+        tfidf_tdrs = fitted_vectorizer.transform(tdr)
+
+        df_tdrs = pd.DataFrame(tfidf_tdrs.T.todense())
+        tfidf_cvs = fitted_vectorizer.transform(cvs)
+        df_cvs = pd.DataFrame(tfidf_cvs.T.todense())
+
+        # cosinus score
+        actual_score_cos = df_cvs.T.dot(df_tdrs)
+
+        actual_score_cos.columns = ['tdr%d'%i for i in range(len(tdr))]
+        actual_score_cos.index = cvs_names
+        score_cos += actual_score_cos
+
+        print(strftime("%Y-%m-%d %H:%M:%S", gmtime()))
+    score_cos=100*score_cos/3 if LANG=='FR' else 100*score_cos/2
+
+    df_result = score_cos.sort_values(by='tdr0', ascending=False)
+    df_result=df_result.drop_duplicates()
+
+    res = df_result.to_json(orient='columns')
+    if output is not None:
+        df_result.to_excel(output)
+    print(strftime("%Y-%m-%d %H:%M:%S", gmtime()))
+
+    return res
+
+
+# MAIN PART THAT CALLS ALL OTHER FUNCTIONS
+
+import gradio as gr
+import docx2txt
+from pdfminer.high_level import extract_text
+import os
+from langdetect import detect
+
+def get_text_from_file(file_path):
+    if file_path.endswith('.pdf'):
+        return extract_text(file_path)
+    elif file_path.endswith('.docx'):
+        return docx2txt.process(file_path)
+    else:
+        raise ValueError("Unsupported file format")
+
+def detect_language(text):
+    try:
+        lang = detect(text)
+        return lang
+    except:
+        return "unknown"
+
+def categorize_cvs(cv_files):
+    english_cvs = []
+    french_cvs = []
+
+    for cv_file in cv_files:
+        cv_content = get_text_from_file(cv_file)
+
+        # Assuming you have a language detection library (like langdetect) installed
+        language = detect(cv_content)
+
+        if language == 'en':
+            english_cvs.append(cv_file)
+        elif language == 'fr':
+            french_cvs.append(cv_file)
+
+    return english_cvs, french_cvs
+
+def generate_json_data(result, cv_files):
+    data = []
+
+    for entry in result:
+        for filename, score in entry.items():
+            language = filename.split("_")[-1].split(".")[0] if "_" in filename else "en"
+            full_path = [file_path for file_path in cv_files if os.path.basename(file_path) == filename]
+
+            if full_path:
+                file_data = {
+                    "full_path": os.path.abspath(full_path[0]),
+                    "language": language,
+                    "score": score
+                }
+            else:
+                file_data = {
+                    "full_path": None,  # You may want to handle the case when full path is not available
+                    "language": language,
+                    "score": score
+                }
+
+            data.append(file_data)
+
+    return data
+
+
+import concurrent.futures
+import json
+
+def compare_job_descriptions_and_cvs(english_job_description, french_job_description, cv_files):
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        # Convert job descriptions to JSON concurrently
+        future_english_json = executor.submit(convert_file_to_json, english_job_description)
+        future_french_json = executor.submit(convert_file_to_json, french_job_description, fr=True)
+
+        # Categorize CVs concurrently
+        future_categorized_cvs = executor.submit(categorize_cvs, cv_files)
+        english_cvs, french_cvs = future_categorized_cvs.result()
+
+        # Convert CVs to JSON concurrently
+        future_english_cv_json = executor.submit(convert_paths_to_json, english_cvs)
+        future_french_cv_json = executor.submit(convert_paths_to_json, french_cvs, fr=True)
+
+        # Wait for CVs to JSON conversion tasks to complete for both languages
+        concurrent.futures.wait([future_english_json, future_french_json])
+        concurrent.futures.wait([future_english_cv_json, future_french_cv_json])
+
+        # Perform ranking concurrently after JSON conversion for each language
+        future_english_rank = executor.submit(
+            ranking, "./CVs.json", "./CVs.json", "./tdr.json", stop=True, output='./ranking_results.xlsx'
+        )
+        future_french_rank = executor.submit(
+            ranking, "./CVs_fr.json", "./CVs_fr.json", "./tdr_fr.json", stop=True, output='./ranking_results.xlsx'
+        )
+
+        # Wait for ranking tasks to complete for both languages
+        concurrent.futures.wait([future_english_rank, future_french_rank])
+
+    # Retrieve results
+    english_json = future_english_json.result()
+    french_json = future_french_json.result()
+
+    english_rank = future_english_rank.result()
+    french_rank = future_french_rank.result()
+
+    # Process results
+    results = [english_rank, french_rank]
+    results = [json.loads(entry)["tdr0"] for entry in results]
+    results = generate_json_data(results, cv_files)
+
+    return results

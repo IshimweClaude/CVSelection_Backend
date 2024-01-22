@@ -27,4 +27,6 @@ urlpatterns = [
     path('applications/applicant/list', views.ApplicantListView.as_view(), name='applicant-list'),
     path('applications/applicant/list/<int:id>', views.ApplicantDetailView.as_view(), name='applicant-detail'),
 
+    path('applications/ai/applicant/list/<int:id>', views.ProcessResumesAPIView.as_view(), name='applicant-ai-list'),
+
 ]

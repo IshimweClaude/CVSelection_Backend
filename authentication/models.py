@@ -127,7 +127,7 @@ class User(AbstractBaseUser, PermissionsMixin, TrackingModel):
         )
         return token
     
-
+    
     class Meta:
         ordering = ('email',)
         db_table = 'users'
