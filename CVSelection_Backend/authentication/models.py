@@ -127,7 +127,7 @@ class User(AbstractBaseUser, PermissionsMixin, TrackingModel):
         )
         return token
     
-
+    
     class Meta:
         ordering = ('email',)
         db_table = 'users'
@@ -147,6 +147,7 @@ class Applicant(models.Model):
         ('Married', 'Married'),
         ('Divorced', 'Divorced'),
         ('Widowed', 'Widowed'),
+        ('other', 'Other')
     ]
     maritalStatus = models.CharField(max_length=100, blank=True, null=True, choices=MARITAL_STATUS_CHOICES)
     address = models.CharField(max_length=100, blank=True, null=True)

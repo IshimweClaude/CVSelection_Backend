@@ -1,0 +1,1 @@
+web: gunicorn CVSelection_Backend.wsgi --log-file -
